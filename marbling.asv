@@ -1,0 +1,9 @@
+dataset_path = fullfile(pwd, 'Beef Dataset');
+image_path = fullfile(dataset_path, '0.jpg');
+
+image = imread(image_path);
+padded = padarray(image,[3 3],'replicate','both');
+gray = rgb2gray(padded);
+blurred = medfilt2(gray, [5 5]);
+blurred = blurred(3:5)
+imshow(blurred)
