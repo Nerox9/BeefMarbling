@@ -4,7 +4,7 @@ function output = train_bpnn(x,t_set)
 tic;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % NN Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-nIter = 1e4;        alpha = 0.05;       nInputs = 1;        nOutputs = 1;
+nIter = 1e4;        alpha = 0.05;       nInputs = 2;        nOutputs = 3;
 f1='logsig';        f2 = 'purelin';     f3  = 'tansig';     f4 = 'hardlim';
 % Function to be approximated ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 x = linspace(-5,5,1e2);                 t_set = 1+sin((pi/4)*x);        
@@ -64,6 +64,7 @@ for i=1:1:nIter
     trgt = 1+sin(pi/4*a0);
         % Feedforward ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     for j=1:1:nLayers
+        layer(j).weight*a0+layer(j).bias
         if (j==1)
             layer(j).out = feval(layer(j).func,layer(j).weight*a0+layer(j).bias);
         elseif(j==nLayers)
