@@ -1,15 +1,25 @@
 addpath('Scripts');
 dataset_path = fullfile(pwd, 'Beef Dataset');
-image_path = fullfile(dataset_path, 'Choice-Moderate0.png');
+percent = 0;
 
 images = dir(fullfile(dataset_path, '*.png'));
 for i=1:length(images)
-    if strfind(images(i).name, 'Prime')
+    i
+    try
+       images(i);
+    catch
+        break;
+    end
+    if strfind(lower(images(i).name), 'prime')
         images(i).label = 2;
-    elseif strfind(images(i).name, 'Choice')
+    elseif strfind(lower(images(i).name), 'choice')
         images(i).label = 1;
-    elseif strfind(images(i).name, 'Select')
+    elseif strfind(lower(images(i).name), 'select')
         images(i).label = 0;
+    else
+        images(i) = [];
+        i = i-1;
+        continue
     end
     
     %% Get image
@@ -19,7 +29,7 @@ for i=1:length(images)
 
     %% Median Blurring
     %blurred = medfilt2(gray, [3 3]);
-    %unpadded_size = size(blurred);
+    unpadded_size = size(image);
     %blurred = blurred(4:unpadded_size(1)-3, 4:unpadded_size(2)-3);
     blurred = gray;
 
@@ -104,17 +114,17 @@ for i=1:length(images)
     imshow(onlymeat)
     title('(10) 9 XOR 8')
 
-    fatCC = bwconncomp(onlyfat)
-    fatcount = fatCC.NumObjects
+    fatCC = bwconncomp(onlyfat);
+    fatcount = fatCC.NumObjects;
 
-    fatarea = bwarea(onlyfat)
+    fatarea = bwarea(onlyfat);
 
-    meatarea = bwarea(onlymeat)
+    meatarea = bwarea(onlymeat);
 
-    fattomeatratio = fatarea/meatarea
+    fattomeatratio = fatarea/meatarea;
 
-    images(i).fatCount = fatcount
-    images(i).ratio = fattomeatratio
+    images(i).fatCount = fatcount;
+    images(i).ratio = fattomeatratio;
 end
 
 %% Features
@@ -122,25 +132,28 @@ numInputs = 1;
 numLayers = 5;
 
 X = [images.ratio]
+Y = [images.fatCount]
 T = [images.label]
 
-%% CNN
-opts = 'sgdm';
-layers = [
-    imageInputLayer([1 1]); % Input is an "Image" 1x36 floating point vector
-    fullyConnectedLayer(200);
-    reluLayer();
-    fullyConnectedLayer(100);
-    reluLayer();
-    fullyConnectedLayer(50);
-    reluLayer();
-    fullyConnectedLayer(24);
-    regressionLayer();
-];
-trainedNet = trainNetwork(X,T,layers,opts)
+len = length(images);
+testcount = round(len*percent);
+itest = randi([1 len],1,testcount);
+itrain = [1:len];
+itrain(itest) = [];
+
+Xtest = X(itest);
+Xtrain = X(itrain);
+Ytest = Y(itest);
+Ytrain = Y(itrain);
+Ttest = T(itest);
+Ttrain = T(itrain);
 %% BPNN
+numInputs = 2;
 
 net = feedforwardnet(3);
 net.numInputs = numInputs;
-trainedNet = train(net,X,T,'useGPU','yes');
+net.trainParam.max_fail = 1000;
+net.trainParam.goal = 1e-9;
+inTrain = {Xtrain; Ytrain};
+[trainedNet,tr] = train(net,inTrain,Ttrain,'useGPU','yes');
 save('network.mat', 'trainedNet');
