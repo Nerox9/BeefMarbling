@@ -1,6 +1,8 @@
+percent = 0; %Test image set percentage
+
+%% Set dataset and labels
 addpath('Scripts');
 dataset_path = fullfile(pwd, 'Beef Dataset');
-percent = 0;
 
 images = dir(fullfile(dataset_path, '*.png'));
 for i=1:length(images)
@@ -10,6 +12,8 @@ for i=1:length(images)
     catch
         break;
     end
+    
+    % Separate image name strings to integer labels
     if strfind(lower(images(i).name), 'prime')
         images(i).label = 2;
     elseif strfind(lower(images(i).name), 'choice')
@@ -30,7 +34,7 @@ for i=1:length(images)
     %% Median Blurring
     %blurred = medfilt2(gray, [3 3]);
     unpadded_size = size(image);
-    %blurred = blurred(4:unpadded_size(1)-3, 4:unpadded_size(2)-3);
+    %blurred = blurred(4:unpadded_size(1)-3, 4:unpadded_size(2)-3); % Extracted because it makes images less detailed and obsolete for low noise dataset.
     blurred = gray;
 
     %% Region Growing method
@@ -76,6 +80,7 @@ for i=1:length(images)
     % imshow(segmented)
     % figure(1)
     % imshow(segmented)
+    
     %% Our Implementation
 
     % Print
@@ -114,6 +119,7 @@ for i=1:length(images)
     imshow(onlymeat)
     title('(10) 9 XOR 8')
 
+    %% Connected Component and Features
     fatCC = bwconncomp(onlyfat);
     fatcount = fatCC.NumObjects;
 
@@ -127,7 +133,7 @@ for i=1:length(images)
     images(i).ratio = fattomeatratio;
 end
 
-%% Features
+%% Set Feature set
 numInputs = 1;
 numLayers = 5;
 
@@ -135,6 +141,7 @@ X = [images.ratio]
 Y = [images.fatCount]
 T = [images.label]
 
+% Separate test and train images but it is already done in BPNN.
 len = length(images);
 testcount = round(len*percent);
 itest = randi([1 len],1,testcount);
@@ -147,13 +154,13 @@ Ytest = Y(itest);
 Ytrain = Y(itrain);
 Ttest = T(itest);
 Ttrain = T(itrain);
-%% BPNN
-numInputs = 2;
 
+%% BPNN
 net = feedforwardnet(3);
 net.numInputs = numInputs;
 net.trainParam.max_fail = 1000;
 net.trainParam.goal = 1e-9;
-inTrain = {Xtrain; Ytrain};
+inTrain = Xtrain; % For one input
+%inTrain = {Xtrain; Ytrain}; % For two input which is could not implemented.
 [trainedNet,tr] = train(net,inTrain,Ttrain,'useGPU','yes');
 save('network.mat', 'trainedNet');
